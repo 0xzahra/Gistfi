@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, FunctionDeclaration, Schema, Modality } from "@google/genai";
-import { ModelType, TrendingTopic } from "../types";
+import { ModelType, TrendingTopic, XProfile, XPost } from "../types";
 
 const SYSTEM_INSTRUCTION = `
 You are Gistfi, built by arewa.base.eth.
@@ -33,6 +33,59 @@ export class GistfiService {
         }
     }
   }
+
+  // --- X Integration Simulation ---
+  async simulateXProfile(handle: string): Promise<{ profile: XProfile, posts: XPost[] }> {
+    try {
+        const cleanHandle = handle.replace('@', '');
+        const response = await this.ai.models.generateContent({
+            model: ModelType.RESEARCH,
+            contents: `Generate a realistic simulation of a crypto twitter profile for handle "@${cleanHandle}".
+            Also generate 3 recent "crypto-native" tweets they might have posted.
+            Return JSON ONLY.
+            Format:
+            {
+              "profile": {
+                "handle": "@${cleanHandle}",
+                "name": "Generated Name",
+                "bio": "Short crypto bio",
+                "followers": "12.5K",
+                "following": "420",
+                "alphaScore": 85
+              },
+              "posts": [
+                { "id": "1", "content": "Tweet content...", "likes": 120, "retweets": 45, "sentiment": "BULLISH", "timestamp": "2h ago" }
+              ]
+            }`,
+            config: {
+                systemInstruction: "Output raw JSON only. No markdown.",
+                temperature: 0.7
+            }
+        });
+
+        const text = response.text || "{}";
+        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(jsonStr);
+    } catch (e) {
+        // Fallback
+        return {
+            profile: { handle: `@${handle}`, name: "Crypto User", bio: "Explorer.", followers: "0", following: "0", avatar: "", alphaScore: 50 },
+            posts: []
+        };
+    }
+  }
+
+  async refineTweet(draft: string): Promise<string> {
+      try {
+          const response = await this.ai.models.generateContent({
+              model: ModelType.FAST,
+              contents: `Refine this tweet for maximum engagement/viral potential on Crypto Twitter. Keep it under 280 chars. Don't use hashtags unless critical. Input: "${draft}"`,
+              config: { systemInstruction: "Return ONLY the refined tweet text." }
+          });
+          return response.text || draft;
+      } catch (e) { return draft; }
+  }
+  // --------------------------------
 
   async getTrending(): Promise<TrendingTopic[]> {
     try {

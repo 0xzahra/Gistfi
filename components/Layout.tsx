@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View } from '../types';
-import { Terminal, Activity, Zap, Mic, Settings, Hexagon, X, Check, Shield, User, Bell } from 'lucide-react';
+import { LayoutDashboard, Activity, Zap, Mic, Settings, Hexagon, X, Check, Shield, User, Twitter } from 'lucide-react';
 
 interface LayoutProps {
   currentView: View;
@@ -10,6 +10,12 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ currentView, setView, children }) => {
   const [showSettings, setShowSettings] = useState(false);
+  
+  // In a real app, this would be global state (Context/Redux)
+  // We're checking local storage or assuming unconnected for initial render if we haven't lifted state up fully
+  // For the specific request, we'll keep it simple.
+  const isConnected = localStorage.getItem('gistfi_x_handle') !== null;
+  const connectedHandle = localStorage.getItem('gistfi_x_handle') || 'User.eth';
 
   const NavItem = ({ view, icon: Icon, label }: { view: View; icon: any; label: string }) => (
     <button
@@ -37,7 +43,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, setView, children }
         </div>
 
         <nav className="flex-1 px-4 space-y-1.5">
-          <NavItem view={View.INTEL} icon={Terminal} label="Intel Core" />
+          <NavItem view={View.INTEL} icon={LayoutDashboard} label="Command Center" />
           <NavItem view={View.WAR_ROOM} icon={Mic} label="War Room" />
           <NavItem view={View.GROWTH} icon={Activity} label="Growth Engine" />
           <NavItem view={View.TOOLS} icon={Zap} label="Execution Tools" />
@@ -48,11 +54,11 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, setView, children }
             onClick={() => setShowSettings(true)}
             className="w-full bg-black/50 hover:bg-black/80 transition-colors rounded-xl p-3 flex items-center space-x-3 border border-gray-800"
           >
-            <div className="w-9 h-9 bg-gradient-to-br from-gistfi-green to-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-lg shadow-gistfi-green/20">
-              0x
+            <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-lg ${isConnected ? 'bg-[#1DA1F2]' : 'bg-gradient-to-br from-gistfi-green to-blue-600'}`}>
+              {isConnected ? <Twitter size={16} fill="white" /> : '0x'}
             </div>
-            <div className="flex-1 text-left">
-              <div className="text-white text-sm font-semibold">User.eth</div>
+            <div className="flex-1 text-left overflow-hidden">
+              <div className="text-white text-sm font-semibold truncate">{connectedHandle}</div>
               <div className="text-[10px] text-gistfi-green font-medium flex items-center">
                 Pro Plan <Shield size={8} className="ml-1" />
               </div>
@@ -89,8 +95,8 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, setView, children }
                                 <User size={16} />
                              </div>
                              <div>
-                                <div className="text-white text-sm font-medium">User.eth</div>
-                                <div className="text-xs text-gray-500">Connected via Wallet</div>
+                                <div className="text-white text-sm font-medium">{connectedHandle}</div>
+                                <div className="text-xs text-gray-500">Connected via {isConnected ? 'X' : 'Wallet'}</div>
                              </div>
                          </div>
                          <span className="text-xs bg-green-900/30 text-green-400 px-2 py-1 rounded border border-green-900/50">Active</span>
@@ -101,12 +107,12 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, setView, children }
                     <h4 className="text-xs font-bold text-gray-500 uppercase mb-3">Integrations</h4>
                     <div className="space-y-2">
                          <div className="flex items-center justify-between p-3 bg-black rounded-lg border border-gray-800">
-                            <span className="text-sm text-white">𝕏 (Twitter)</span>
-                            <span className="text-xs flex items-center text-gistfi-green gap-1"><Check size={12}/> Connected</span>
-                         </div>
-                         <div className="flex items-center justify-between p-3 bg-black rounded-lg border border-gray-800">
-                            <span className="text-sm text-white">TikTok</span>
-                            <span className="text-xs flex items-center text-gistfi-green gap-1"><Check size={12}/> Connected</span>
+                            <span className="text-sm text-white flex items-center gap-2"><Twitter size={14} className={isConnected ? "text-[#1DA1F2]" : "text-gray-500"} /> 𝕏 (Twitter)</span>
+                            {isConnected ? (
+                                <span className="text-xs flex items-center text-gistfi-green gap-1"><Check size={12}/> Connected</span>
+                            ) : (
+                                <span className="text-xs flex items-center text-gray-500 gap-1">Not Connected</span>
+                            )}
                          </div>
                     </div>
                 </div>

@@ -1,8 +1,27 @@
 export enum View {
-  INTEL = 'INTEL',
+  INTEL = 'INTEL', // Now represents Command Center/Dashboard
   WAR_ROOM = 'WAR_ROOM',
   GROWTH = 'GROWTH',
   TOOLS = 'TOOLS'
+}
+
+export interface XProfile {
+  handle: string;
+  name: string;
+  bio: string;
+  followers: string;
+  following: string;
+  avatar: string; // URL or placeholder color
+  alphaScore: number; // 0-100
+}
+
+export interface XPost {
+  id: string;
+  content: string;
+  likes: number;
+  retweets: number;
+  sentiment: 'BULLISH' | 'BEARISH' | 'NEUTRAL';
+  timestamp: string;
 }
 
 export interface Message {
