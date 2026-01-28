@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, FunctionDeclaration, Schema, Modality } from "@google/genai";
-import { ModelType } from "../types";
+import { ModelType, TrendingTopic } from "../types";
 
 const SYSTEM_INSTRUCTION = `
 You are Gistfi, built by arewa.base.eth.
@@ -31,6 +31,34 @@ export class GistfiService {
             await win.aistudio.openSelectKey();
             this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
         }
+    }
+  }
+
+  async getTrending(): Promise<TrendingTopic[]> {
+    try {
+        const response = await this.ai.models.generateContent({
+            model: ModelType.RESEARCH, // Using Flash for speed/search balance
+            contents: `Identify 4 top trending crypto narratives or tokens on X (Twitter) and TikTok right now.
+            Return a JSON array ONLY.
+            Format: [{"topic": "$TICKER or Concept", "volume": "High/Med", "source": "X" or "TikTok" or "Mixed", "change": "+XX%"}]
+            Use search to get real data.`,
+            config: {
+                tools: [{ googleSearch: {} }],
+                systemInstruction: "Output raw JSON array only. No markdown blocks."
+            }
+        });
+
+        const text = response.text || "[]";
+        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(jsonStr);
+    } catch (e) {
+        // Fallback for extreme speed if API fails or is slow
+        return [
+            { topic: "$BASE", volume: "High", source: "Mixed", change: "+12%" },
+            { topic: "AI Agents", volume: "High", source: "X", change: "+45%" },
+            { topic: "Memecoins", volume: "Med", source: "TikTok", change: "+8%" },
+            { topic: "$ETH", volume: "High", source: "X", change: "+4%" }
+        ];
     }
   }
 

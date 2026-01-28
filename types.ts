@@ -24,6 +24,13 @@ export interface AnalysisResult {
   verdict: string;
 }
 
+export interface TrendingTopic {
+  topic: string;
+  volume: string;
+  source: 'X' | 'TikTok' | 'Mixed';
+  change: string;
+}
+
 export enum ModelType {
   INTELLIGENCE = 'gemini-3-pro-preview',
   FAST = 'gemini-2.5-flash-lite',
