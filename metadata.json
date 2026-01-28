@@ -1,0 +1,8 @@
+{
+  "name": "Gistfi - Crypto Super-Agent",
+  "description": "Autonomous, X-native, DeepSeek-powered crypto intelligence and execution super-agent. Fusing research depth with execution speed.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ]
+}
