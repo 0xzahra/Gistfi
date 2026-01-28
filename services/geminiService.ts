@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type, FunctionDeclaration, Schema, Modality } from "@google/genai";
+import { GoogleGenAI, Modality } from "@google/genai";
 import { ModelType, TrendingTopic, XProfile, XPost } from "../types";
 
 const SYSTEM_INSTRUCTION = `
@@ -19,7 +19,13 @@ export class GistfiService {
   private apiKey: string;
 
   constructor() {
-    this.apiKey = process.env.API_KEY || '';
+    let key = '';
+    try {
+        key = process.env.API_KEY || '';
+    } catch (e) {
+        console.warn("Gistfi: process.env not accessible, using empty key.");
+    }
+    this.apiKey = key;
     this.ai = new GoogleGenAI({ apiKey: this.apiKey });
   }
 
@@ -29,7 +35,7 @@ export class GistfiService {
         const hasKey = await win.aistudio.hasSelectedApiKey();
         if (!hasKey) {
             await win.aistudio.openSelectKey();
-            this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+            this.ai = new GoogleGenAI({ apiKey: this.apiKey });
         }
     }
   }
@@ -67,7 +73,6 @@ export class GistfiService {
         const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
         return JSON.parse(jsonStr);
     } catch (e) {
-        // Fallback
         return {
             profile: { handle: `@${handle}`, name: "Crypto User", bio: "Explorer.", followers: "0", following: "0", avatar: "", alphaScore: 50 },
             posts: []
@@ -89,15 +94,16 @@ export class GistfiService {
 
   async getTrending(): Promise<TrendingTopic[]> {
     try {
+        // Explicitly requesting Search Grounding for real-time data
         const response = await this.ai.models.generateContent({
-            model: ModelType.RESEARCH, // Using Flash for speed/search balance
-            contents: `Identify 4 top trending crypto narratives or tokens on X (Twitter) and TikTok right now.
+            model: ModelType.RESEARCH,
+            contents: `Search for the absolute latest trending Crypto and Web3 narratives, tokens, and memes on X (Twitter) and TikTok from the last 24 hours.
+            Focus on high engagement topics.
             Return a JSON array ONLY.
-            Format: [{"topic": "$TICKER or Concept", "volume": "High/Med", "source": "X" or "TikTok" or "Mixed", "change": "+XX%"}]
-            Use search to get real data.`,
+            Format: [{"topic": "$TICKER or Concept", "volume": "High/Viral/Exploding", "source": "X" or "TikTok" or "Mixed", "change": "+XX%"}]`,
             config: {
                 tools: [{ googleSearch: {} }],
-                systemInstruction: "Output raw JSON array only. No markdown blocks."
+                systemInstruction: "Output raw JSON array only. No markdown blocks. Prioritize real trends found via search."
             }
         });
 
@@ -105,12 +111,14 @@ export class GistfiService {
         const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
         return JSON.parse(jsonStr);
     } catch (e) {
-        // Fallback for extreme speed if API fails or is slow
+        console.error("Trend fetch error", e);
         return [
-            { topic: "$BASE", volume: "High", source: "Mixed", change: "+12%" },
-            { topic: "AI Agents", volume: "High", source: "X", change: "+45%" },
-            { topic: "Memecoins", volume: "Med", source: "TikTok", change: "+8%" },
-            { topic: "$ETH", volume: "High", source: "X", change: "+4%" }
+            { topic: "AI Agents", volume: "Viral", source: "Mixed", change: "+145%" },
+            { topic: "$VIRTUAL", volume: "High", source: "X", change: "+32%" },
+            { topic: "TikTok Memecoins", volume: "Exploding", source: "TikTok", change: "+500%" },
+            { topic: "Base L2", volume: "High", source: "X", change: "+12%" },
+            { topic: "DeSci", volume: "Med", source: "X", change: "+8%" },
+            { topic: "$CHILLGUY", volume: "Viral", source: "TikTok", change: "+88%" }
         ];
     }
   }
@@ -141,14 +149,12 @@ export class GistfiService {
         }
         return null;
     } catch (e) {
-        console.error("Price fetch failed", e);
         return null;
     }
   }
 
   async getTokenHistory(ticker: string, timeframe: '24h' | '7d'): Promise<any[]> {
     try {
-        // We use a lighter prompt for speed
         const response = await this.ai.models.generateContent({
             model: ModelType.RESEARCH,
             contents: `Generate realistic JSON price history for ${ticker} (${timeframe}).
@@ -170,7 +176,7 @@ export class GistfiService {
   }
 
   async analyzeToken(token: string, deepDive: boolean = false): Promise<string> {
-    const model = deepDive ? ModelType.INTELLIGENCE : ModelType.RESEARCH; // Research is faster
+    const model = deepDive ? ModelType.INTELLIGENCE : ModelType.RESEARCH; 
     const tools: any[] = [{ googleSearch: {} }];
     const config: any = {
       systemInstruction: SYSTEM_INSTRUCTION,
@@ -196,7 +202,7 @@ export class GistfiService {
   async quickScan(query: string): Promise<string> {
     try {
       const response = await this.ai.models.generateContent({
-        model: ModelType.FAST, // Fastest model
+        model: ModelType.FAST, 
         contents: query,
         config: {
           systemInstruction: "You are Gistfi. 1 sentence max. High signal."
@@ -249,7 +255,7 @@ export class GistfiService {
     const updatedOp = await this.ai.operations.getVideosOperation({ operation });
     if (updatedOp.done) {
         const uri = updatedOp.response?.generatedVideos?.[0]?.video?.uri;
-        if (uri) return `${uri}&key=${process.env.API_KEY}`;
+        if (uri) return `${uri}&key=${this.apiKey}`;
         return null;
     }
     return null;

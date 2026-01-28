@@ -1,21 +1,18 @@
 import React, { useState } from 'react';
-import { View } from '../types';
-import { LayoutDashboard, Activity, Zap, Mic, Settings, Hexagon, X, Check, Shield, User, Twitter } from 'lucide-react';
+import { View, XProfile } from '../types';
+import { LayoutDashboard, Activity, Zap, Mic, Settings, Hexagon, X, Check, Shield, User, Twitter, LogOut } from 'lucide-react';
 
 interface LayoutProps {
   currentView: View;
   setView: (view: View) => void;
   children: React.ReactNode;
+  user: XProfile | null;
+  onLogout: () => void;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ currentView, setView, children }) => {
+export const Layout: React.FC<LayoutProps> = ({ currentView, setView, children, user, onLogout }) => {
   const [showSettings, setShowSettings] = useState(false);
-  
-  // In a real app, this would be global state (Context/Redux)
-  // We're checking local storage or assuming unconnected for initial render if we haven't lifted state up fully
-  // For the specific request, we'll keep it simple.
-  const isConnected = localStorage.getItem('gistfi_x_handle') !== null;
-  const connectedHandle = localStorage.getItem('gistfi_x_handle') || 'User.eth';
+  const isConnected = !!user;
 
   const NavItem = ({ view, icon: Icon, label }: { view: View; icon: any; label: string }) => (
     <button
@@ -58,9 +55,9 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, setView, children }
               {isConnected ? <Twitter size={16} fill="white" /> : '0x'}
             </div>
             <div className="flex-1 text-left overflow-hidden">
-              <div className="text-white text-sm font-semibold truncate">{connectedHandle}</div>
+              <div className="text-white text-sm font-semibold truncate">{user?.handle || 'Connect'}</div>
               <div className="text-[10px] text-gistfi-green font-medium flex items-center">
-                Pro Plan <Shield size={8} className="ml-1" />
+                {isConnected ? 'Pro Plan' : 'Guest'} <Shield size={8} className="ml-1" />
               </div>
             </div>
             <Settings size={16} className="text-gray-500" />
@@ -95,8 +92,8 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, setView, children }
                                 <User size={16} />
                              </div>
                              <div>
-                                <div className="text-white text-sm font-medium">{connectedHandle}</div>
-                                <div className="text-xs text-gray-500">Connected via {isConnected ? 'X' : 'Wallet'}</div>
+                                <div className="text-white text-sm font-medium">{user?.handle || 'Guest'}</div>
+                                <div className="text-xs text-gray-500">{isConnected ? 'Verified User' : 'Not Connected'}</div>
                              </div>
                          </div>
                          <span className="text-xs bg-green-900/30 text-green-400 px-2 py-1 rounded border border-green-900/50">Active</span>
@@ -117,15 +114,15 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, setView, children }
                     </div>
                 </div>
 
-                <div>
-                    <h4 className="text-xs font-bold text-gray-500 uppercase mb-3">Preferences</h4>
-                    <div className="flex items-center justify-between p-2">
-                        <span className="text-sm text-gray-300">Push Notifications</span>
-                        <div className="w-10 h-5 bg-gistfi-green rounded-full relative cursor-pointer">
-                            <div className="absolute right-1 top-1 w-3 h-3 bg-white rounded-full"></div>
-                        </div>
-                    </div>
-                </div>
+                {isConnected && (
+                    <button 
+                        onClick={() => { onLogout(); setShowSettings(false); }}
+                        className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-xl flex items-center justify-center space-x-2 transition-colors"
+                    >
+                        <LogOut size={16} />
+                        <span className="text-sm font-bold">Disconnect Identity</span>
+                    </button>
+                )}
              </div>
 
              <div className="p-4 bg-black/50 border-t border-gray-800 text-center">
